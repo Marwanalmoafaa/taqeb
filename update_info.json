@@ -2,7 +2,7 @@
   "latest_version": "1.5.0",
   "current_version_code": 6,
   "release_date": "2025-08-07",
-  "download_url": "https://github.com/Marwanalmoafaa/taqeb/releases/download/v1.5.0/taqeb_v1.5.0.exe",
+  "download_url": "https://github.com/Marwanalmoafaa/taqeb/releases/download/v1.5.0/v1.5.0_Windows.zip",
   "changelog": {
     "ar": [
       "🔄 إضافة نظام التحديث التلقائي المتطور",
@@ -14,7 +14,7 @@
   },
   "is_critical": false,
   "min_supported_version": "1.4.0",
-  "file_size": "28.5 MB",
+  "file_size": "12 MB",
   "checksum": "sha256:abcd1234...",
   "auto_update_enabled": true
 }
