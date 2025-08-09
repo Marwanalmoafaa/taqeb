@@ -162,7 +162,7 @@ class AuthService {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تميز إداري - تم تسجيل الدخول بنجاح</title>
+    <title>تعقيب - تم تسجيل الدخول بنجاح</title>
     <style>
         * {
             margin: 0;
@@ -263,9 +263,9 @@ class AuthService {
     <div class="container">
         <div class="icon">✅</div>
         <h1>تم تسجيل الدخول بنجاح!</h1>
-        <p>تم ربط حسابك في Google بنجاح مع تطبيق تميز إداري</p>
+        <p>تم ربط حسابك في Google بنجاح مع تطبيق تعقيب</p>
         <p>يمكنك الآن إغلاق هذه النافذة والعودة إلى التطبيق</p>
-        <div class="brand">تميز إداري</div>
+        <div class="brand">تعقيب</div>
         <button class="close-btn" onclick="window.close()">إغلاق النافذة</button>
     </div>
     
