@@ -34,7 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
-    
+
     // فحص حجم الشاشة
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
@@ -52,62 +52,80 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         // إضافة AppBar للشاشات الصغيرة
-        appBar: isMobile ? AppBar(
-          title: const Text('تعقيب'),
-          backgroundColor: sidebarColor,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-        ) : null,
-        // قائمة جانبية للشاشات الصغيرة
-        drawer: isMobile ? _buildDrawerContent(
-          sidebarColor, selectedItemColor, unselectedItemColor, 
-          dividerColor, isDarkMode
-        ) : null,
-        body: isMobile ? 
-        // تخطيط للشاشات الصغيرة (الجوال)
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _screens[_selectedIndex],
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ) :
-        // تخطيط للشاشات الكبيرة (سطح المكتب)
-        Row(
-          children: [
-            // القائمة الجانبية المحسنة للشاشات الكبيرة
-            Container(
-              width: 280,
-              decoration: BoxDecoration(
-                color: sidebarColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(2, 0),
+        appBar: isMobile
+            ? AppBar(
+                title: const Text('تعقيب'),
+                backgroundColor: sidebarColor,
+                leading: Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
-                ],
-              ),
-              child: _buildSidebarContent(
-                selectedItemColor, unselectedItemColor, dividerColor, isDarkMode
-              ),
-            ),
-            // محتوى الصفحة
-            Expanded(
-              child: AnimatedSwitcher(
+                ),
+              )
+            : null,
+        // قائمة جانبية للشاشات الصغيرة
+        drawer: isMobile
+            ? _buildDrawerContent(
+                sidebarColor,
+                selectedItemColor,
+                unselectedItemColor,
+                dividerColor,
+                isDarkMode,
+              )
+            : null,
+        body: isMobile
+            ?
+              // تخطيط للشاشات الصغيرة (الجوال)
+              AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: _screens[_selectedIndex],
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return FadeTransition(opacity: animation, child: child);
                 },
+              )
+            :
+              // تخطيط للشاشات الكبيرة (سطح المكتب)
+              Row(
+                children: [
+                  // القائمة الجانبية المحسنة للشاشات الكبيرة
+                  Container(
+                    width: 280,
+                    decoration: BoxDecoration(
+                      color: sidebarColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                            isDarkMode ? 0.5 : 0.1,
+                          ),
+                          blurRadius: 10,
+                          offset: const Offset(2, 0),
+                        ),
+                      ],
+                    ),
+                    child: _buildSidebarContent(
+                      selectedItemColor,
+                      unselectedItemColor,
+                      dividerColor,
+                      isDarkMode,
+                    ),
+                  ),
+                  // محتوى الصفحة
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _screens[_selectedIndex],
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -176,23 +194,36 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // بناء محتوى القائمة الجانبية للشاشات الصغيرة (Drawer)
-  Widget _buildDrawerContent(Color sidebarColor, Color selectedItemColor, 
-      Color unselectedItemColor, Color dividerColor, bool isDarkMode) {
+  Widget _buildDrawerContent(
+    Color sidebarColor,
+    Color selectedItemColor,
+    Color unselectedItemColor,
+    Color dividerColor,
+    bool isDarkMode,
+  ) {
     return Container(
       width: 280,
       color: sidebarColor,
-      child: _buildSidebarContent(selectedItemColor, unselectedItemColor, 
-          dividerColor, isDarkMode),
+      child: _buildSidebarContent(
+        selectedItemColor,
+        unselectedItemColor,
+        dividerColor,
+        isDarkMode,
+      ),
     );
   }
 
   // بناء محتوى القائمة الجانبية
-  Widget _buildSidebarContent(Color selectedItemColor, Color unselectedItemColor, 
-      Color dividerColor, bool isDarkMode) {
+  Widget _buildSidebarContent(
+    Color selectedItemColor,
+    Color unselectedItemColor,
+    Color dividerColor,
+    bool isDarkMode,
+  ) {
     return Column(
       children: [
         const SizedBox(height: 32),
-        // شعار النظام المحسن 
+        // شعار النظام المحسن
         Container(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -205,10 +236,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     height: 50,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          Color(0xFF45A049),
-                        ],
+                        colors: [AppColors.primary, Color(0xFF45A049)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -334,10 +362,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ? AppColors.primary.withOpacity(0.2)
                         : AppColors.lightGrey,
                     radius: 20,
-                    child: const Icon(
-                      Icons.settings,
-                      color: AppColors.primary,
-                    ),
+                    child: const Icon(Icons.settings, color: AppColors.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
