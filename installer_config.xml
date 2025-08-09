@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="تعقيب - نظام إدارة المؤسسات" Language="1025" Version="1.5.0.0" 
+           Manufacturer="مروان المعافاء" UpgradeCode="12345678-1234-1234-1234-123456789012">
+    
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    
+    <MediaTemplate EmbedCab="yes" />
+    
+    <Feature Id="ProductFeature" Title="تعقيب" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+    
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Taqeb" />
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="تعقيب" />
+      </Directory>
+    </Directory>
+    
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable">
+        <File Id="TaqebEXE" Source="build\windows\x64\runner\Release\taqeb.exe" />
+        <Shortcut Id="ApplicationStartMenuShortcut" Directory="ApplicationProgramsFolder" 
+                  Name="تعقيب" WorkingDirectory="INSTALLFOLDER" Icon="TaqebEXE" IconIndex="0" />
+      </Component>
+      <Component Id="FlutterDLL">
+        <File Source="build\windows\x64\runner\Release\flutter_windows.dll" />
+      </Component>
+      <Component Id="DataFolder">
+        <File Source="build\windows\x64\runner\Release\data\*" />
+      </Component>
+    </ComponentGroup>
+    
+  </Product>
+</Wix>

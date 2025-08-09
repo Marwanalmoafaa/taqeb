@@ -11,14 +11,18 @@ import 'package:taqeb/services/database_service.dart';
 import 'package:taqeb/models/company.dart';
 import 'package:taqeb/models/account.dart';
 import 'package:taqeb/models/transaction.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:archive/archive.dart';
-import 'package:path_provider/path_provider.dart';
+// Platform-conditional packages
+import 'package:file_picker/file_picker.dart'
+    if (dart.library.html) 'package:file_picker/file_picker.dart';
+// archive and path_provider are used in IO helpers now
 import 'package:path/path.dart' as path;
 import 'package:taqeb/services/update_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+// Avoid importing dart:io directly in web-safe UI code
+import 'package:taqeb/utils/download_helper.dart';
+import 'package:taqeb/utils/backup_helpers.dart';
+import 'package:taqeb/utils/attachment_helpers.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -920,6 +924,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // إنشاء نسخة احتياطية شاملة مع المرفقات
   Future<void> _createBackup(BuildContext context) async {
     try {
+      if (kIsWeb) {
+        // Data-only JSON backup for web
+        final backupData = await _gatherAllData();
+        final jsonBytes = utf8.encode(jsonEncode(backupData));
+        final now = DateTime.now();
+        final name = 'taqeb_backup_${now.toIso8601String().split('T')[0]}.json';
+        await DownloadHelper.saveBytes(jsonBytes, name);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ تم تنزيل نسخة احتياطية (بيانات فقط) كملف JSON'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
       // عرض حوار التحميل
       showDialog(
         context: context,
@@ -938,11 +959,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       // إنشاء مجلد مؤقت للنسخة الاحتياطية
-      final tempDir = await getTemporaryDirectory();
-      final backupDir = Directory(
-        '${tempDir.path}/taqeb_backup_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      await backupDir.create(recursive: true);
+      final backupDir = await BackupHelpers.createTempBackupDir();
 
       try {
         // 1. جمع البيانات
@@ -950,13 +967,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print('تم جمع البيانات بنجاح');
 
         // 2. حفظ ملف البيانات JSON
-        final dataFile = File('${backupDir.path}/data.json');
-        await dataFile.writeAsString(jsonEncode(backupData));
+        await BackupHelpers.writeString(
+          backupDir,
+          'data.json',
+          jsonEncode(backupData),
+        );
         print('تم حفظ البيانات في data.json');
 
         // 3. إنشاء مجلد للمرفقات
-        final attachmentsDir = Directory('${backupDir.path}/attachments');
-        await attachmentsDir.create();
+        final attachmentsDir = await BackupHelpers.ensureSubdir(
+          backupDir,
+          'attachments',
+        );
 
         // 4. نسخ جميع الملفات المرفقة
         final attachmentPaths = await _collectAndCopyAttachments(
@@ -965,12 +987,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         print('تم نسخ ${attachmentPaths.length} مرفق');
 
         // 5. إنشاء ملف فهرس المرفقات
-        final indexFile = File('${backupDir.path}/attachments_index.json');
-        await indexFile.writeAsString(jsonEncode(attachmentPaths));
+        await BackupHelpers.writeString(
+          backupDir,
+          'attachments_index.json',
+          jsonEncode(attachmentPaths),
+        );
         print('تم إنشاء فهرس المرفقات');
 
         // 6. ضغط كل شيء إلى ملف ZIP
-        final zipPath = await _createZipFile(backupDir);
+        final zipPath = await BackupHelpers.zipDirectory(backupDir);
         print('تم إنشاء ملف ZIP: $zipPath');
 
         // إغلاق حوار التحميل
@@ -980,33 +1005,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         // اختيار مكان الحفظ
         final now = DateTime.now();
-        String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'حفظ النسخة الاحتياطية الشاملة',
-          fileName:
+        await BackupHelpers.saveZipToUserLocation(
+          zipPath,
+          suggestedName:
               'taqeb_full_backup_${now.toIso8601String().split('T')[0]}.zip',
-          type: FileType.custom,
-          allowedExtensions: ['zip'],
         );
 
-        if (outputFile != null) {
-          // نسخ الملف المضغوط إلى المكان المختار
-          final zipFile = File(zipPath);
-          await zipFile.copy(outputFile);
-          print('تم حفظ الملف في: $outputFile');
-
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '✅ تم إنشاء النسخة الاحتياطية الشاملة بنجاح!\n📁 تحتوي على البيانات والمرفقات',
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 5),
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '✅ تم إنشاء النسخة الاحتياطية الشاملة بنجاح!\n📁 تحتوي على البيانات والمرفقات',
               ),
-            );
-          }
-        } else {
-          print('لم يتم اختيار مكان للحفظ');
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 5),
+            ),
+          );
         }
 
         // تنظيف المجلد المؤقت
@@ -1039,7 +1053,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // جمع ونسخ جميع الملفات المرفقة
   Future<Map<String, String>> _collectAndCopyAttachments(
-    Directory attachmentsDir,
+    dynamic attachmentsDir,
   ) async {
     final Map<String, String> attachmentPaths = {};
     final companies = DatabaseService.getAllCompanies(includeArchived: true);
@@ -1050,16 +1064,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (company.companyAttachments.isNotEmpty) {
         for (final attachment in company.companyAttachments) {
           if (attachment['path'] != null) {
-            final originalFile = File(attachment['path']);
-            if (await originalFile.exists()) {
+            final originalPath = attachment['path'] as String;
+            if (await AttachmentHelpers.fileExists(originalPath)) {
               final extension = path.extension(attachment['path']);
               final newFileName =
                   'company_${company.name}_${fileCounter}$extension';
-              final newFile = File('${attachmentsDir.path}/$newFileName');
-
               try {
-                await originalFile.copy(newFile.path);
-                attachmentPaths[attachment['path']] = newFileName;
+                await BackupHelpers.copyIfExists(
+                  originalPath,
+                  attachmentsDir,
+                  newFileName,
+                );
+                attachmentPaths[originalPath] = newFileName;
                 fileCounter++;
               } catch (e) {
                 print('خطأ في نسخ ملف: ${attachment['path']} - $e');
@@ -1081,17 +1097,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             final attachments = worker['attachments'] as List;
             for (final attachment in attachments) {
               if (attachment['path'] != null) {
-                final originalFile = File(attachment['path']);
-                if (await originalFile.exists()) {
+                final originalPath = attachment['path'] as String;
+                if (await AttachmentHelpers.fileExists(originalPath)) {
                   final extension = path.extension(attachment['path']);
                   final workerName = worker['name'] ?? 'worker_$workerIndex';
                   final newFileName =
                       'worker_${company.name}_${workerName}_${fileCounter}$extension';
-                  final newFile = File('${attachmentsDir.path}/$newFileName');
-
                   try {
-                    await originalFile.copy(newFile.path);
-                    attachmentPaths[attachment['path']] = newFileName;
+                    await BackupHelpers.copyIfExists(
+                      originalPath,
+                      attachmentsDir,
+                      newFileName,
+                    );
+                    attachmentPaths[originalPath] = newFileName;
                     fileCounter++;
                   } catch (e) {
                     print('خطأ في نسخ ملف عامل: ${attachment['path']} - $e');
@@ -1107,49 +1125,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return attachmentPaths;
   }
 
-  // إنشاء ملف ZIP مضغوط
-  Future<String> _createZipFile(Directory sourceDir) async {
-    final archive = Archive();
-
-    // إضافة جميع الملفات إلى الأرشيف
-    await _addDirectoryToArchive(archive, sourceDir, '');
-
-    // ترميز الأرشيف إلى ZIP
-    final zipData = ZipEncoder().encode(archive);
-
-    // حفظ الملف المضغوط
-    final zipFile = File('${sourceDir.path}.zip');
-    await zipFile.writeAsBytes(zipData!);
-
-    return zipFile.path;
-  }
-
-  // إضافة مجلد إلى الأرشيف بشكل تكراري
-  Future<void> _addDirectoryToArchive(
-    Archive archive,
-    Directory dir,
-    String basePath,
-  ) async {
-    final entities = await dir.list().toList();
-
-    for (final entity in entities) {
-      final relativePath = basePath.isEmpty
-          ? path.basename(entity.path)
-          : '$basePath/${path.basename(entity.path)}';
-
-      if (entity is File) {
-        final bytes = await entity.readAsBytes();
-        final file = ArchiveFile(relativePath, bytes.length, bytes);
-        archive.addFile(file);
-      } else if (entity is Directory) {
-        await _addDirectoryToArchive(archive, entity, relativePath);
-      }
-    }
-  }
-
   // استعادة نسخة احتياطية شاملة
   Future<void> _restoreBackup(BuildContext context) async {
     try {
+      if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'الاستعادة من نسخة احتياطية غير مدعومة على الويب حالياً',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
       // اختيار ملف النسخة الاحتياطية
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -1260,143 +1249,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // استعادة من ملف ZIP
   Future<void> _restoreFromZipBackup(String zipFilePath) async {
-    final tempDir = await getTemporaryDirectory();
-    final extractDir = Directory(
-      '${tempDir.path}/restore_${DateTime.now().millisecondsSinceEpoch}',
-    );
-    await extractDir.create(recursive: true);
+    if (kIsWeb) return;
+    final result = await BackupHelpers.restoreFromZip(zipFilePath);
+    final extractDir = result['extractDir'] as String;
+    final backupData = result['data'] as Map<String, dynamic>;
 
-    try {
-      // قراءة ملف ZIP
-      final zipFile = File(zipFilePath);
-      final bytes = await zipFile.readAsBytes();
+    // استعادة البيانات
+    await _restoreAllData(backupData);
 
-      // استخراج الملفات
-      final archive = ZipDecoder().decodeBytes(bytes);
-      for (final file in archive) {
-        final fileName = file.name;
-        final extractedFile = File('${extractDir.path}/$fileName');
-
-        if (file.isFile) {
-          await extractedFile.create(recursive: true);
-          await extractedFile.writeAsBytes(file.content as List<int>);
+    // استعادة المرفقات وتحديث المسارات
+    final newPaths = await BackupHelpers.copyRestoredAttachments(extractDir);
+    if (newPaths.isNotEmpty) {
+      final companies = DatabaseService.getAllCompanies(includeArchived: true);
+      for (final company in companies) {
+        for (final attachment in company.companyAttachments) {
+          final originalPath = attachment['path'];
+          if (originalPath != null && newPaths.containsKey(originalPath)) {
+            attachment['path'] = newPaths[originalPath];
+          }
         }
-      }
-
-      // قراءة ملف البيانات
-      final dataFile = File('${extractDir.path}/data.json');
-      if (await dataFile.exists()) {
-        final jsonString = await dataFile.readAsString();
-        final backupData = jsonDecode(jsonString);
-
-        // استعادة البيانات
-        await _restoreAllData(backupData);
-
-        // استعادة المرفقات
-        final indexFile = File('${extractDir.path}/attachments_index.json');
-        if (await indexFile.exists()) {
-          await _restoreAttachments(extractDir, indexFile);
+        for (final worker in company.workers) {
+          if (worker['attachments'] != null && worker['attachments'] is List) {
+            final attachments = worker['attachments'] as List;
+            for (final attachment in attachments) {
+              final originalPath = attachment['path'];
+              if (originalPath != null && newPaths.containsKey(originalPath)) {
+                attachment['path'] = newPaths[originalPath];
+              }
+            }
+          }
         }
-      } else {
-        throw Exception('ملف البيانات غير موجود في النسخة الاحتياطية');
-      }
-    } finally {
-      // تنظيف المجلد المؤقت
-      if (await extractDir.exists()) {
-        await extractDir.delete(recursive: true);
+        await company.save();
       }
     }
   }
 
   // استعادة من ملف JSON (النظام القديم)
   Future<void> _restoreFromJsonBackup(String jsonFilePath) async {
-    final file = File(jsonFilePath);
-    final jsonString = await file.readAsString();
+    if (kIsWeb) return;
+    final jsonString = await BackupHelpers.readFileAsString(jsonFilePath);
     final backupData = jsonDecode(jsonString);
     await _restoreAllData(backupData);
   }
 
-  // استعادة المرفقات
-  Future<void> _restoreAttachments(Directory extractDir, File indexFile) async {
-    try {
-      final indexContent = await indexFile.readAsString();
-      final attachmentPaths = Map<String, String>.from(
-        jsonDecode(indexContent),
-      );
-
-      final attachmentsDir = Directory('${extractDir.path}/attachments');
-      if (!await attachmentsDir.exists()) return;
-
-      // إنشاء مجلد للمرفقات المستعادة
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final restoredAttachmentsDir = Directory(
-        '${documentsDir.path}/taqeb_attachments',
-      );
-      await restoredAttachmentsDir.create(recursive: true);
-
-      // استعادة كل ملف وتحديث المسارات في قاعدة البيانات
-      final companies = DatabaseService.getAllCompanies(includeArchived: true);
-
-      for (final company in companies) {
-        // تحديث مرفقات الشركة
-        for (final attachment in company.companyAttachments) {
-          final originalPath = attachment['path'];
-          if (originalPath != null &&
-              attachmentPaths.containsKey(originalPath)) {
-            final backupFileName = attachmentPaths[originalPath]!;
-            final backupFile = File('${attachmentsDir.path}/$backupFileName');
-
-            if (await backupFile.exists()) {
-              final newFileName =
-                  '${DateTime.now().millisecondsSinceEpoch}_$backupFileName';
-              final newFile = File(
-                '${restoredAttachmentsDir.path}/$newFileName',
-              );
-              await backupFile.copy(newFile.path);
-              attachment['path'] = newFile.path;
-            }
-          }
-        }
-
-        // تحديث مرفقات العمال
-        for (final worker in company.workers) {
-          if (worker['attachments'] != null && worker['attachments'] is List) {
-            final attachments = worker['attachments'] as List;
-            for (final attachment in attachments) {
-              final originalPath = attachment['path'];
-              if (originalPath != null &&
-                  attachmentPaths.containsKey(originalPath)) {
-                final backupFileName = attachmentPaths[originalPath]!;
-                final backupFile = File(
-                  '${attachmentsDir.path}/$backupFileName',
-                );
-
-                if (await backupFile.exists()) {
-                  final newFileName =
-                      '${DateTime.now().millisecondsSinceEpoch}_$backupFileName';
-                  final newFile = File(
-                    '${restoredAttachmentsDir.path}/$newFileName',
-                  );
-                  await backupFile.copy(newFile.path);
-                  attachment['path'] = newFile.path;
-                }
-              }
-            }
-          }
-        }
-
-        // حفظ التغييرات في قاعدة البيانات
-        await company.save();
-      }
-    } catch (e) {
-      print('خطأ في استعادة المرفقات: $e');
-      // لا نرمي الخطأ هنا حتى لا توقف عملية استعادة البيانات
-    }
-  }
+  // استعادة المرفقات: تم نقلها إلى BackupHelpers ويتم استدعاؤها ضمن _restoreFromZipBackup
 
   // تصدير البيانات
   Future<void> _exportData(BuildContext context) async {
     try {
+      if (kIsWeb) {
+        final allData = await _gatherAllData();
+        final csvContent = _convertToCSV(allData);
+        final now = DateTime.now();
+        final name = 'taqeb_data_${now.toIso8601String().split('T')[0]}.csv';
+        final bytes = utf8.encode('\uFEFF$csvContent');
+        await DownloadHelper.saveBytes(bytes, name);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ تم تنزيل ملف CSV بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
       // حفظ البيانات مباشرة بصيغة CSV للاستخدام في Excel
       // عرض حوار التحميل
       showDialog(
@@ -1422,31 +1339,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // إغلاق حوار التحميل
       Navigator.of(context).pop();
 
-      // حفظ الملف
+      // حفظ الملف باستخدام مساعد الحفظ بدون استخدام File مباشرة
       final now = DateTime.now();
-      String? outputFile = await FilePicker.platform.saveFile(
+      final bytes = utf8.encode('\uFEFF$csvContent');
+      await BackupHelpers.saveBytesWithDialog(
+        bytes,
         dialogTitle: 'تصدير البيانات إلى Excel',
         fileName: 'taqeb_data_${now.toIso8601String().split('T')[0]}.csv',
-        type: FileType.custom,
         allowedExtensions: ['csv'],
       );
 
-      if (outputFile != null) {
-        final file = File(outputFile);
-        // إضافة BOM للعربية في Excel
-        await file.writeAsString(
-          '\uFEFF$csvContent',
-          encoding: Encoding.getByName('utf-8')!,
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ تم تصدير البيانات إلى Excel بنجاح!'),
+            backgroundColor: Colors.green,
+          ),
         );
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ تم تصدير البيانات إلى Excel بنجاح!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
       }
     } catch (e) {
       // إغلاق حوار التحميل في حالة الخطأ

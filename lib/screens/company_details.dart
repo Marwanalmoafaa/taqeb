@@ -4,9 +4,12 @@ import 'package:taqeb/services/database_service.dart';
 import 'package:taqeb/utils/constants.dart';
 import 'package:taqeb/widgets/common_widgets.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'package:file_picker/file_picker.dart'
+    if (dart.library.html) 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart'
+    if (dart.library.html) 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:taqeb/utils/attachment_helpers.dart';
 import 'package:path/path.dart' as path;
 
 /// صفحة عرض تفاصيل المؤسسة
@@ -655,11 +658,11 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isImage)
+            if (isImage && !kIsWeb)
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Image.file(
-                  File(attachment['path']),
+                  AttachmentHelpers.imageFile(attachment['path']),
                   width: 50,
                   height: 35,
                   fit: BoxFit.cover,
@@ -718,11 +721,11 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (isImage)
+            if (isImage && !kIsWeb)
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: Image.file(
-                  File(attachment['path']),
+                  AttachmentHelpers.imageFile(attachment['path']),
                   width: 50,
                   height: 35,
                   fit: BoxFit.cover,
@@ -769,13 +772,13 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (_isImageFile(attachment['extension'] ?? '')) ...[
+            if (_isImageFile(attachment['extension'] ?? '') && !kIsWeb) ...[
               ListTile(
                 leading: const Icon(Icons.zoom_in),
                 title: const Text('عرض الصورة'),
                 onTap: () {
                   Navigator.pop(context);
-                  _showImageViewer(attachment);
+                  if (!kIsWeb) _showImageViewer(attachment);
                 },
               ),
             ],
@@ -787,21 +790,22 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
                 _editCompanyAttachmentName(attachment);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('مشاركة'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareAttachment(attachment);
-              },
-            ),
-            if (_isImageFile(attachment['extension'] ?? '')) ...[
+            if (!kIsWeb)
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: const Text('مشاركة'),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (!kIsWeb) _shareAttachment(attachment);
+                },
+              ),
+            if (_isImageFile(attachment['extension'] ?? '') && !kIsWeb) ...[
               ListTile(
                 leading: const Icon(Icons.print),
                 title: const Text('طباعة'),
                 onTap: () {
                   Navigator.pop(context);
-                  _printAttachment(attachment);
+                  if (!kIsWeb) _printAttachment(attachment);
                 },
               ),
             ],
@@ -898,10 +902,16 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () async {
                 try {
-                  // حذف الملف من النظام
-                  final file = File(attachment['path']);
-                  if (await file.exists()) {
-                    await file.delete();
+                  // حذف الملف من النظام (أجهزة سطح المكتب فقط)
+                  if (!kIsWeb) {
+                    final pathStr = attachment['path'] as String;
+                    if (await AttachmentHelpers.fileExists(pathStr)) {
+                      try {
+                        // استخدام dart:io للحذف فقط في بيئات غير الويب
+                        final f = AttachmentHelpers.imageFile(pathStr);
+                        await f.delete();
+                      } catch (_) {}
+                    }
                   }
 
                   // تحديث بيانات المؤسسة
@@ -995,13 +1005,13 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (_isImageFile(attachment['extension'] ?? '')) ...[
+            if (_isImageFile(attachment['extension'] ?? '') && !kIsWeb) ...[
               ListTile(
                 leading: const Icon(Icons.zoom_in),
                 title: const Text('عرض الصورة'),
                 onTap: () {
                   Navigator.pop(context);
-                  _showImageViewer(attachment);
+                  if (!kIsWeb) _showImageViewer(attachment);
                 },
               ),
             ],
@@ -1013,21 +1023,22 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
                 _editAttachmentName(attachment, workerIndex);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('مشاركة'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareAttachment(attachment);
-              },
-            ),
-            if (_isImageFile(attachment['extension'] ?? '')) ...[
+            if (!kIsWeb)
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: const Text('مشاركة'),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (!kIsWeb) _shareAttachment(attachment);
+                },
+              ),
+            if (_isImageFile(attachment['extension'] ?? '') && !kIsWeb) ...[
               ListTile(
                 leading: const Icon(Icons.print),
                 title: const Text('طباعة'),
                 onTap: () {
                   Navigator.pop(context);
-                  _printAttachment(attachment);
+                  if (!kIsWeb) _printAttachment(attachment);
                 },
               ),
             ],
@@ -1068,14 +1079,15 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
                   ),
                 ],
               ),
-              Expanded(
-                child: InteractiveViewer(
-                  child: Image.file(
-                    File(attachment['path']),
-                    fit: BoxFit.contain,
+              if (!kIsWeb)
+                Expanded(
+                  child: InteractiveViewer(
+                    child: Image.file(
+                      AttachmentHelpers.imageFile(attachment['path']),
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1154,21 +1166,17 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
   // مشاركة المرفق (بدلاً من النسخ إلى سطح المكتب)
   Future<void> _shareAttachment(Map<String, dynamic> attachment) async {
     try {
-      final file = File(attachment['path']);
-      if (await file.exists()) {
-        // نسخ الملف إلى مجلد مؤقت للمشاركة
-        final tempDir = await getTemporaryDirectory();
-        final fileName = '${attachment['name']}${attachment['extension']}';
-        final tempFile = File('${tempDir.path}/$fileName');
-        await file.copy(tempFile.path);
-
-        // فتح مستكشف الملفات على المجلد المؤقت
-        await Process.run('explorer', ['/select,', tempFile.path]);
+      if (kIsWeb) return;
+      final filePath = attachment['path'] as String;
+      final exists = await AttachmentHelpers.fileExists(filePath);
+      if (exists) {
+        // كشف الملف في المستكشف
+        await AttachmentHelpers.revealInExplorer(filePath);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('تم فتح مجلد الملف: $fileName'),
+              content: Text('تم فتح المجلد للمرفق: ${attachment['name']}'),
               backgroundColor: Colors.green,
             ),
           );
@@ -1198,13 +1206,11 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
   // طباعة المرفق
   Future<void> _printAttachment(Map<String, dynamic> attachment) async {
     try {
-      final file = File(attachment['path']);
-      if (await file.exists()) {
-        // فتح الملف باستخدام التطبيق الافتراضي للطباعة
-        await Process.run('rundll32', [
-          'url.dll,FileProtocolHandler',
-          file.path,
-        ]);
+      if (kIsWeb) return;
+      final filePath = attachment['path'] as String;
+      final exists = await AttachmentHelpers.fileExists(filePath);
+      if (exists) {
+        await AttachmentHelpers.openForPrint(filePath);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1254,10 +1260,15 @@ class _CompanyDetailsPageState extends State<CompanyDetailsPage> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () async {
                 try {
-                  // حذف الملف من النظام
-                  final file = File(attachment['path']);
-                  if (await file.exists()) {
-                    await file.delete();
+                  // حذف الملف من النظام (سطح المكتب فقط)
+                  if (!kIsWeb) {
+                    final p = attachment['path'] as String;
+                    if (await AttachmentHelpers.fileExists(p)) {
+                      try {
+                        final f = AttachmentHelpers.imageFile(p);
+                        await f.delete();
+                      } catch (_) {}
+                    }
                   }
 
                   // تحديث بيانات العامل مباشرة
@@ -1546,11 +1557,13 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  if (isImage)
+                                  if (isImage && !kIsWeb)
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
                                       child: Image.file(
-                                        File(attachmentMap['path']),
+                                        AttachmentHelpers.imageFile(
+                                          attachmentMap['path'],
+                                        ),
                                         width: 35,
                                         height: 25,
                                         fit: BoxFit.cover,
@@ -2123,11 +2136,13 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (isImage)
+                                if (isImage && !kIsWeb)
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
                                     child: Image.file(
-                                      File(attachmentMap['path']),
+                                      AttachmentHelpers.imageFile(
+                                        attachmentMap['path'],
+                                      ),
                                       width: 35,
                                       height: 25,
                                       fit: BoxFit.cover,
@@ -2227,6 +2242,14 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
   // إضافة مرفقات للعامل في نموذج التعديل
   Future<void> _addAttachmentsToWorker(int workerIndex) async {
     try {
+      if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('رفع المرفقات غير مدعوم على الويب حالياً'),
+          ),
+        );
+        return;
+      }
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.any,
@@ -2240,32 +2263,27 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
         final directory = await getApplicationDocumentsDirectory();
         final workerName =
             _workers[workerIndex]['name'] ?? 'عامل_${workerIndex + 1}';
-        final companyFolder = Directory(
-          '${directory.path}/taqeb/${_nameController.text}',
-        );
-        final workerFolder = Directory('${companyFolder.path}/$workerName');
-
-        if (!await workerFolder.exists()) {
-          await workerFolder.create(recursive: true);
-        }
+        final companyFolderPath =
+            '${directory.path}/taqeb/${_nameController.text}';
+        final workerFolderPath = '$companyFolderPath/$workerName';
+        await AttachmentHelpers.ensureDir(workerFolderPath);
 
         for (var file in result.files) {
           if (file.path != null) {
             // نسخ الملف إلى مجلد التطبيق
-            final originalFile = File(file.path!);
+            final originalFilePath = file.path!;
             final fileName = path.basenameWithoutExtension(file.name);
             final fileExtension = path.extension(file.name);
             final newFileName =
                 '${DateTime.now().millisecondsSinceEpoch}_$fileName$fileExtension';
-            final newFile = File('${workerFolder.path}/$newFileName');
-
-            await originalFile.copy(newFile.path);
+            final newFilePath = '$workerFolderPath/$newFileName';
+            await AttachmentHelpers.copyFileTo(originalFilePath, newFilePath);
 
             // إضافة معلومات المرفق
             newAttachments.add({
               'name': fileName, // اسم قابل للتعديل بدون الامتداد
               'originalName': file.name,
-              'path': newFile.path,
+              'path': newFilePath,
               'size': file.size,
               'extension': fileExtension,
               'uploadedAt': DateTime.now().toIso8601String(),
@@ -2304,6 +2322,14 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
   // إضافة مرفقات للمؤسسة
   Future<void> _addCompanyAttachments() async {
     try {
+      if (kIsWeb) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('رفع مرفقات المؤسسة غير مدعوم على الويب حالياً'),
+          ),
+        );
+        return;
+      }
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.any,
@@ -2315,31 +2341,26 @@ class _NewCompanyPageState extends State<NewCompanyPage> {
 
         // إنشاء مجلد للمؤسسة إذا لم يكن موجوداً
         final directory = await getApplicationDocumentsDirectory();
-        final companyFolder = Directory(
-          '${directory.path}/taqeb/${_nameController.text}/company_attachments',
-        );
-
-        if (!await companyFolder.exists()) {
-          await companyFolder.create(recursive: true);
-        }
+        final companyFolderPath =
+            '${directory.path}/taqeb/${_nameController.text}/company_attachments';
+        await AttachmentHelpers.ensureDir(companyFolderPath);
 
         for (var file in result.files) {
           if (file.path != null) {
             // نسخ الملف إلى مجلد التطبيق
-            final originalFile = File(file.path!);
+            final originalFilePath = file.path!;
             final fileName = path.basenameWithoutExtension(file.name);
             final fileExtension = path.extension(file.name);
             final newFileName =
                 '${DateTime.now().millisecondsSinceEpoch}_$fileName$fileExtension';
-            final newFile = File('${companyFolder.path}/$newFileName');
-
-            await originalFile.copy(newFile.path);
+            final newFilePath = '$companyFolderPath/$newFileName';
+            await AttachmentHelpers.copyFileTo(originalFilePath, newFilePath);
 
             // إضافة معلومات المرفق
             newAttachments.add({
               'name': fileName, // اسم قابل للتعديل بدون الامتداد
               'originalName': file.name,
-              'path': newFile.path,
+              'path': newFilePath,
               'size': file.size,
               'extension': fileExtension,
               'uploadedAt': DateTime.now().toIso8601String(),

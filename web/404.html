@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>جارٍ إعادة التوجيه...</title>
+    <meta http-equiv="refresh" content="0; url=./" />
+    <script>
+      // For SPA routing on GitHub Pages
+      (function() {
+        var redirect = window.sessionStorage.getItem('ghSpaRedirect');
+        if (redirect) {
+          window.sessionStorage.removeItem('ghSpaRedirect');
+          var target = new URL(redirect, window.location.origin);
+          window.location.replace(target.pathname.replace(/[^/]+\.[^/]+$/, ''));
+        } else {
+          window.location.replace('./');
+        }
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
