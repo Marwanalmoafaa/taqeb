@@ -67,10 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 4),
                       const Text(
                         'تم تسجيل الدخول بنجاح عبر Google',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -87,10 +84,10 @@ class _LoginScreenState extends State<LoginScreen> {
             elevation: 6,
           ),
         );
-        
+
         // تأخير قصير لإظهار الرسالة قبل الانتقال
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -122,10 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(
                   child: Text(
                     errorMessage,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],
@@ -176,11 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(
-                  Icons.email_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                const Icon(Icons.email_rounded, color: Colors.white, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -198,10 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 4),
                       const Text(
                         'تم تسجيل الدخول بنجاح',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -218,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
             elevation: 6,
           ),
         );
-        
+
         // تأخير قصير لإظهار الرسالة قبل الانتقال
         await Future.delayed(const Duration(milliseconds: 500));
 
@@ -241,10 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(
                   child: Text(
                     'فشل تسجيل الدخول: ${e.toString()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],
@@ -319,10 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 4),
                       const Text(
                         'تم إنشاء حسابك بنجاح، أهلاً بك في تميز إداري',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -339,10 +320,10 @@ class _LoginScreenState extends State<LoginScreen> {
             elevation: 6,
           ),
         );
-        
+
         // تأخير قصير لإظهار الرسالة قبل الانتقال
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -362,10 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(
                   child: Text(
                     'فشل إنشاء الحساب: ${e.toString()}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
                   ),
                 ),
               ],
