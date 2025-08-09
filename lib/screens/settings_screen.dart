@@ -841,7 +841,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _performLogout(BuildContext context) async {
     try {
       await AuthService.signOut();
-      
+
       // إعادة تعيين قاعدة البيانات للمستخدم الافتراضي (guest)
       await DatabaseService.switchUser(null);
 

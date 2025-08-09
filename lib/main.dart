@@ -110,12 +110,12 @@ class _AppShellState extends State<AppShell> {
       // التحقق من وجود جلسة مستخدم محفوظة
       final user = await AuthService.restoreSession();
       final isLoggedIn = user != null && !AuthService.isSessionExpired();
-      
+
       if (isLoggedIn) {
         // تبديل قاعدة البيانات للمستخدم المستعاد
         await DatabaseService.switchUser(user.id);
       }
-      
+
       setState(() {
         _isLoggedIn = isLoggedIn;
         _isLoading = false;

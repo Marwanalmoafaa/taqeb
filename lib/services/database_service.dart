@@ -12,7 +12,7 @@ class DatabaseService {
   static Box<Company>? _companiesBox;
   static Box<TransactionModel>? _transactionsBox;
   static Box<AccountModel>? _accountsBox;
-  
+
   // معرف المستخدم الحالي
   static String? _currentUserId;
 
@@ -22,22 +22,26 @@ class DatabaseService {
   static const String _baseAccountsBoxName = 'accounts';
 
   /// الحصول على أسماء الصناديق الخاصة بالمستخدم الحالي
-  static String get companiesBoxName => '${_baseCompaniesBoxName}_${_currentUserId ?? 'guest'}';
-  static String get transactionsBoxName => '${_baseTransactionsBoxName}_${_currentUserId ?? 'guest'}';
-  static String get accountsBoxName => '${_baseAccountsBoxName}_${_currentUserId ?? 'guest'}';
+  static String get companiesBoxName =>
+      '${_baseCompaniesBoxName}_${_currentUserId ?? 'guest'}';
+  static String get transactionsBoxName =>
+      '${_baseTransactionsBoxName}_${_currentUserId ?? 'guest'}';
+  static String get accountsBoxName =>
+      '${_baseAccountsBoxName}_${_currentUserId ?? 'guest'}';
 
   /// تهيئة قاعدة البيانات وفتح الصناديق لمستخدم محدد
   /// يجب استدعاء هذه الدالة عند تسجيل دخول المستخدم
   static Future<void> initialize([String? userId]) async {
     await Hive.initFlutter();
-    
+
     // تحديث معرف المستخدم
     _currentUserId = userId;
 
     try {
       // تسجيل المحولات
       if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(CompanyAdapter());
-      if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(TransactionAdapter());
+      if (!Hive.isAdapterRegistered(1))
+        Hive.registerAdapter(TransactionAdapter());
       if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(AccountAdapter());
       if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(UserAdapter());
 
@@ -46,9 +50,11 @@ class DatabaseService {
 
       // فتح الصناديق الخاصة بالمستخدم الحالي
       _companiesBox = await Hive.openBox<Company>(companiesBoxName);
-      _transactionsBox = await Hive.openBox<TransactionModel>(transactionsBoxName);
+      _transactionsBox = await Hive.openBox<TransactionModel>(
+        transactionsBoxName,
+      );
       _accountsBox = await Hive.openBox<AccountModel>(accountsBoxName);
-      
+
       print('تم تهيئة قاعدة البيانات للمستخدم: ${_currentUserId ?? 'guest'}');
     } catch (e) {
       print('خطأ في تهيئة قاعدة البيانات: $e');
@@ -67,15 +73,11 @@ class DatabaseService {
   /// معالجة خطأ التهيئة
   static Future<void> _handleInitializationError() async {
     try {
-      // إعادة تسجيل المحولات
-      if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(CompanyAdapter());
-      if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(TransactionAdapter());
-      if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(AccountAdapter());
-      if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(UserAdapter());
-
-      // فتح الصناديق من جديد
+      // فتح الصناديق من جديد بدون إعادة تسجيل المحولات
       _companiesBox = await Hive.openBox<Company>(companiesBoxName);
-      _transactionsBox = await Hive.openBox<TransactionModel>(transactionsBoxName);
+      _transactionsBox = await Hive.openBox<TransactionModel>(
+        transactionsBoxName,
+      );
       _accountsBox = await Hive.openBox<AccountModel>(accountsBoxName);
     } catch (e) {
       print('فشل في إعادة تهيئة قاعدة البيانات: $e');
@@ -90,8 +92,12 @@ class DatabaseService {
 
   /// التحقق من وجود الصناديق المفتوحة
   static void _ensureBoxesInitialized() {
-    if (_companiesBox == null || _transactionsBox == null || _accountsBox == null) {
-      throw Exception('قاعدة البيانات غير مهيأة. يجب استدعاء initialize() أولاً');
+    if (_companiesBox == null ||
+        _transactionsBox == null ||
+        _accountsBox == null) {
+      throw Exception(
+        'قاعدة البيانات غير مهيأة. يجب استدعاء initialize() أولاً',
+      );
     }
   }
 
@@ -205,7 +211,7 @@ class DatabaseService {
   /// استيراد البيانات من JSON
   static Future<void> importFromJson(Map<String, dynamic> data) async {
     _ensureBoxesInitialized();
-    
+
     // استيراد الشركات
     if (data.containsKey('companies')) {
       final companies = (data['companies'] as List)

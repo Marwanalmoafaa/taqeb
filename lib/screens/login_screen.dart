@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null && mounted) {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('أهلاً وسهلاً ${user.name}! 🎉'),
@@ -52,10 +52,21 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'فشل تسجيل الدخول';
+        
+        if (e.toString().contains('Google Sign-In غير مكون')) {
+          errorMessage = 'Google Sign-In غير مكون. يرجى استخدام تسجيل الدخول بالإيميل';
+        } else if (e.toString().contains('ملف تكوين Google فارغ')) {
+          errorMessage = 'يرجى تكوين Google Sign-In أولاً أو استخدم تسجيل الدخول بالإيميل';
+        } else {
+          errorMessage = 'خطأ في تسجيل الدخول: ${e.toString()}';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل تسجيل الدخول: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -88,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null && mounted) {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
-        
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -133,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null && mounted) {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إنشاء الحساب بنجاح!'),
