@@ -21,12 +21,12 @@ class AuthService {
       final String response = await rootBundle.loadString(
         'assets/google_client_secret.json',
       );
-      
+
       // التحقق من أن الملف ليس فارغًا
       if (response.trim().isEmpty) {
         throw Exception('Google client secret file is empty');
       }
-      
+
       final Map<String, dynamic> data = json.decode(response);
       final clientId = data['web']['client_id'];
 
@@ -46,19 +46,23 @@ class AuthService {
   static Future<User?> signInWithGoogle({bool rememberMe = true}) async {
     // التحقق من توفر Google Sign-In
     if (_googleSignIn == null) {
-      throw Exception('Google Sign-In غير مكون. يرجى استخدام تسجيل الدخول بالإيميل');
+      throw Exception(
+        'Google Sign-In غير مكون. يرجى استخدام تسجيل الدخول بالإيميل',
+      );
     }
-    
+
     try {
       final String response = await rootBundle.loadString(
         'assets/google_client_secret.json',
       );
-      
+
       // التحقق من أن الملف ليس فارغًا
       if (response.trim().isEmpty) {
-        throw Exception('ملف تكوين Google فارغ. يرجى تكوين Google Sign-In أولاً');
+        throw Exception(
+          'ملف تكوين Google فارغ. يرجى تكوين Google Sign-In أولاً',
+        );
       }
-      
+
       final Map<String, dynamic> data = json.decode(response);
       final clientId = data['web']['client_id'];
       final clientSecret = data['web']['client_secret'];

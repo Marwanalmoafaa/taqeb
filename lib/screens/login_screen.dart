@@ -40,12 +40,57 @@ class _LoginScreenState extends State<LoginScreen> {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
 
+        // رسالة ترحيبية محسنة مع تصميم أفضل
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('أهلاً وسهلاً ${user.name}! 🎉'),
-            backgroundColor: Colors.green,
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'مرحباً بك ${user.name}! 🎉',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'تم تسجيل الدخول بنجاح عبر Google',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            elevation: 6,
           ),
         );
+        
+        // تأخير قصير لإظهار الرسالة قبل الانتقال
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -53,20 +98,46 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         String errorMessage = 'فشل تسجيل الدخول';
-        
+
         if (e.toString().contains('Google Sign-In غير مكون')) {
-          errorMessage = 'Google Sign-In غير مكون. يرجى استخدام تسجيل الدخول بالإيميل';
+          errorMessage =
+              'Google Sign-In غير مكون. يرجى استخدام تسجيل الدخول بالإيميل';
         } else if (e.toString().contains('ملف تكوين Google فارغ')) {
-          errorMessage = 'يرجى تكوين Google Sign-In أولاً أو استخدم تسجيل الدخول بالإيميل';
+          errorMessage =
+              'يرجى تكوين Google Sign-In أولاً أو استخدم تسجيل الدخول بالإيميل';
         } else {
           errorMessage = 'خطأ في تسجيل الدخول: ${e.toString()}';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 4),
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.warning_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFFF9800),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 5),
+            elevation: 6,
           ),
         );
       }
@@ -100,6 +171,57 @@ class _LoginScreenState extends State<LoginScreen> {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
 
+        // رسالة ترحيبية محسنة لتسجيل الدخول بالإيميل
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.email_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'أهلاً وسهلاً ${user.name}! ✨',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'تم تسجيل الدخول بنجاح',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF2196F3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+            elevation: 6,
+          ),
+        );
+        
+        // تأخير قصير لإظهار الرسالة قبل الانتقال
+        await Future.delayed(const Duration(milliseconds: 500));
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -108,8 +230,33 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل تسجيل الدخول: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'فشل تسجيل الدخول: ${e.toString()}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFE53E3E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            elevation: 6,
           ),
         );
       }
@@ -145,12 +292,57 @@ class _LoginScreenState extends State<LoginScreen> {
         // تبديل قاعدة البيانات للمستخدم الجديد
         await DatabaseService.switchUser(user.id);
 
+        // رسالة ترحيبية محسنة لإنشاء الحساب
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم إنشاء الحساب بنجاح!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.account_circle_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'مرحباً ${user.name}! 🌟',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'تم إنشاء حسابك بنجاح، أهلاً بك في تميز إداري',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF9C27B0),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            elevation: 6,
           ),
         );
+        
+        // تأخير قصير لإظهار الرسالة قبل الانتقال
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -159,8 +351,33 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل إنشاء الحساب: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'فشل إنشاء الحساب: ${e.toString()}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFE53E3E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+            elevation: 6,
           ),
         );
       }
