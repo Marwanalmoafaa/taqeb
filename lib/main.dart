@@ -15,11 +15,11 @@ void main() async {
   // تأكد من تهيئة Flutter
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تهيئة قاعدة البيانات
-  await DatabaseService.initialize();
-
-  // تهيئة خدمة المصادقة
+  // تهيئة خدمة المصادقة أولاً
   await AuthService.initialize();
+
+  // تهيئة قاعدة البيانات (بدون مستخدم في البداية)
+  await DatabaseService.initialize();
 
   // تشغيل التطبيق
   runApp(
@@ -109,8 +109,15 @@ class _AppShellState extends State<AppShell> {
     try {
       // التحقق من وجود جلسة مستخدم محفوظة
       final user = await AuthService.restoreSession();
+      final isLoggedIn = user != null && !AuthService.isSessionExpired();
+      
+      if (isLoggedIn) {
+        // تبديل قاعدة البيانات للمستخدم المستعاد
+        await DatabaseService.switchUser(user.id);
+      }
+      
       setState(() {
-        _isLoggedIn = user != null && !AuthService.isSessionExpired();
+        _isLoggedIn = isLoggedIn;
         _isLoading = false;
       });
     } catch (e) {

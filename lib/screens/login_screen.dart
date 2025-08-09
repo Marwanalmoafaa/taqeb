@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:taqeb/services/auth_service.dart';
+import 'package:taqeb/services/database_service.dart';
 import 'package:taqeb/screens/dashboard_page.dart';
 import 'package:taqeb/utils/theme_provider.dart';
 
@@ -36,6 +37,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await AuthService.signInWithGoogle(rememberMe: _rememberMe);
 
       if (user != null && mounted) {
+        // تبديل قاعدة البيانات للمستخدم الجديد
+        await DatabaseService.switchUser(user.id);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('أهلاً وسهلاً ${user.name}! 🎉'),
@@ -82,6 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (user != null && mounted) {
+        // تبديل قاعدة البيانات للمستخدم الجديد
+        await DatabaseService.switchUser(user.id);
+        
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardPage()),
         );
@@ -124,6 +131,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (user != null && mounted) {
+        // تبديل قاعدة البيانات للمستخدم الجديد
+        await DatabaseService.switchUser(user.id);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إنشاء الحساب بنجاح!'),
